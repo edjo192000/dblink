@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # MariaDB Database
+  mariadb:
+    image: mariadb:8.0.44
+    container_name: mariadb-dblink
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: oracle_user
+      MYSQL_PASSWORD: 12345
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb/init:/docker-entrypoint-initdb.d
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - dblink-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Oracle XE 19c
+  oracle:
+    image: container-registry.oracle.com/database/express:21.3.0-xe
+    container_name: oracle-xe-dblink
+    environment:
+      ORACLE_PWD: 12345
+      ORACLE_CHARACTERSET: AL32UTF8
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    volumes:
+      - ./oracle/initdb:/opt/oracle/scripts/startup
+      - ./oracle/config:/opt/oracle/config
+      - oracle_data:/opt/oracle/oradata
+    networks:
+      - dblink-network
+    shm_size: 1g
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo exit | sqlplus -s system/12345@XE"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+networks:
+  dblink-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  oracle_data:

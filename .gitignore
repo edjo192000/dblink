@@ -1,0 +1,16 @@
+# Docker volumes and data
+oracle/oradata/
+mariadb/data/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
